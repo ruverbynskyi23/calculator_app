@@ -19,7 +19,7 @@ export class Calculator extends React.Component {
 
   handleTouch(value) {
     const {displayValue, isCalculated} = this.state;
-    const operators = ['+', '-', '/', '*'];
+    const operators = ['+', '-', '/', '*', '%'];
 
     if(displayValue.length >= 10 || isNaN(displayValue.substr(-1)) && operators.includes(value.substr(-1))) {
       this.setState({
