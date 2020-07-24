@@ -48,6 +48,14 @@ export class Calculator extends React.Component {
     }
   }
 
+  handleZeroButton(value) {
+    const {displayValue} = this.state;
+
+    if(displayValue !== '') {
+      this.setState({displayValue: displayValue + value});
+    }
+  }
+
   clearDisplay() {
     this.setState({displayValue: ''});
   }
@@ -128,7 +136,7 @@ export class Calculator extends React.Component {
             <Button value="+" background="#FB8C00" press={this.handleTouch.bind(this)}/>
           </View>
           <View style={styles.row}>
-            <Button value="0" background="#616161" style={{flex: 1}} press={this.handleTouch.bind(this)}/>
+            <Button value="0" background="#616161" style={{flex: 1}} press={this.handleZeroButton.bind(this)}/>
             <Button value="." background="#616161" press={this.handleDecimal.bind(this)}/>
             <Button value="=" background="#FB8C00" press={this.calculate.bind(this)}/>
           </View>
