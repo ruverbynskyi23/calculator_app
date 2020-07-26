@@ -9,113 +9,181 @@ export class Calculator extends React.Component {
     super();
     
     this.state = {
-      displayValue: '',
-      memory: '',
-      isCalculated: false,
-      plusMinusSign: '+',
+      display: '',
+      chunks: null,
     };
 
   }
 
+  makeChunks() {
+    const {display} = this.state;
+    const regex = /([\+\*\/\-])/;
+
+    const arr = display.split(regex);
+
+    this.setState({chunks: arr});
+  }
+
   handleTouch(value) {
-    const {displayValue, isCalculated} = this.state;
+    const {display} = this.state;
     const operators = ['+', '-', '/', '*', '%'];
 
-    if(displayValue.length >= 10 || isNaN(displayValue.substr(-1)) && operators.includes(value.substr(-1))) {
-      this.setState({
-        displayValue: displayValue.substr(0, displayValue.length - 1) + value.substr(-1)
-      });
+    if(!isNaN(value) && value !=='0') {
+      this.setState({display: display + value});
+    }
+    if(operators.includes(value)) {
+      this.handleOperators(value);
+    }
+    if(value === '.') {
+      this.handleDecimal(value);
+    }
+    if(value === '0') {
+      this.handleZeroButton(value);
+    }
+    if(value === 'AC') {
+      this.clearDisplay();
+    }
+    if(value === '=') {
+      this.calculate();
+    }
+
+  }
+
+  handleOperators(value) {
+    const {display} = this.state;
+    const operators = ['+', '-', '/', '*', '%'];
+
+    if(display === '' && value !== '-') {
+      return;
+    }
+    if(display === '-' && isNaN(value)) {
+      this.clearDisplay();
+      return;
+    }
+    if(display.substr(-1) === '%' && value !== '%') {
+      this.setState({display: display + value});
+      return;
+    }
+    if(isNaN(display.substr(-1)) && operators.includes(value)) {
+      this.setState({display: display.substr(0, display.length - 1) + value});
       return;
     }
 
-    if(!isCalculated) {
-      this.setState({displayValue: displayValue + value});
-    }
-    if(isCalculated && isNaN(parseInt(value))) {
-      this.setState({displayValue: displayValue + value, isCalculated: false});
-    }
-    if(isCalculated && !isNaN(parseInt(value))) {
-      this.setState({displayValue: value, isCalculated: false});
-    }
-
+    this.setState({display: display + value});
   }
 
   handleDecimal(value) {
-    const {displayValue} = this.state;
+    const {display, chunks} = this.state;
+    const isNum = isNaN(display[display.length - 1]);
 
-    if(displayValue.indexOf(value) === -1 && displayValue !== '') {
-      this.setState({displayValue: displayValue + value});
+    if(display === '') {
+      this.setState({display: '0.'});
+      return;
     }
+    if(isNum || chunks[chunks.length - 1].includes('.')) {
+      return;
+    }
+
+    this.setState({display: display + value});
   }
 
-  handleZeroButton(value) {
-    const {displayValue} = this.state;
+  handleZeroButton(value) {    
+    const {display} = this.state;
 
-    if(displayValue !== '') {
-      this.setState({displayValue: displayValue + value});
+    if(display !== '') {
+      this.setState({display: display + value});
     }
   }
 
   clearDisplay() {
-    this.setState({displayValue: ''});
+    this.setState({display: ''});
   }
 
-  changeSign() {
-    const {displayValue, plusMinusSign} = this.state;
-    const formated = displayValue.replace(/[+-]?(\+?\-?[0-9]+)$/, `${plusMinusSign}$1`);
+  // changeSign() {
+  //   const {displayValue, plusMinusSign} = this.state;
+  //   const formated = displayValue.replace(/[+-]?(\+?\-?[0-9]+)$/, `${plusMinusSign}$1`);
 
-    this.setState({
-      plusMinusSign: plusMinusSign === '+' ? '-' : '+',
-      displayValue: formated,
+  //   this.setState({
+  //     plusMinusSign: plusMinusSign === '+' ? '-' : '+',
+  //     displayValue: formated,
+  //   })
+  // }
+
+  percentage(arr) {
+    return arr.map((item, i) => {
+      if(item.includes('%') && arr[i - 1] !== undefined) {
+        return item = arr[i - 2]/100*item.substr(0, item.length - 1);
+      }
+      return item;
     })
   }
 
-  calculate() {
-    const {displayValue} = this.state;
+  async calculate() {
+    await this.makeChunks();
+    let {display, chunks} = this.state;
+    let arr = this.percentage(chunks);
 
-    if(displayValue === '' || isNaN(displayValue.substr(-1))) return;
+    if(display === '' || (isNaN(display.substr(-1)) && display.substr(-1) !== '%')) return;
+    
+    while(arr.includes('*')) {
+      const i = arr.indexOf('*');
+      arr[i - 1] = arr[i - 1] * arr[i + 1];
+      arr.splice(i, 2);
+    }
+    while(arr.includes('/')) {
+      const i = arr.indexOf('/');
+      arr[i - 1] = arr[i - 1] / arr[i + 1];
+      arr.splice(i, 2);
+    }
+    while(arr.includes('+')) {
+      const i = arr.indexOf('+');
+      arr[i - 1] = +arr[i - 1] + +arr[i + 1];
+      arr.splice(i, 2);
+    }
+    while(arr.includes('-')) {
+      const i = arr.indexOf('-');
+      arr[i - 1] = arr[i - 1] - arr[i + 1];
+      arr.splice(i, 2);
+    }
 
-    let result = displayValue.replace(/([0-9]+\.?[0-9]+)\*([0-9]+\.?[0-9]+)%/g, '$1*($2/100)');
-    result = eval(result).toString();
-
-    this.setState({displayValue: result, isCalculated: true, memory: result});
+    this.setState({display: arr[0].toString()})
   }
 
-  clearMemory() {
-    this.setState({memory: ''});
-  }
+  // clearMemory() {
+  //   this.setState({memory: ''});
+  // }
 
-  readMemory() {
-    const {memory} = this.state;
-    this.setState({displayValue: memory.toString()});
-  }
+  // readMemory() {
+  //   const {memory} = this.state;
+  //   this.setState({displayValue: memory.toString()});
+  // }
   
-  decrementMemory() {
-    const {memory} = this.state;
-    this.setState({memory: +memory - 1});
-  }
+  // decrementMemory() {
+  //   const {memory} = this.state;
+  //   this.setState({memory: +memory - 1});
+  // }
 
-  incrementMemory() {
-    const {memory} = this.state;
-    this.setState({memory: +memory + 1});
-  }
+  // incrementMemory() {
+  //   const {memory} = this.state;
+  //   this.setState({memory: +memory + 1});
+  // }
 
   render() {
     return (
       <View style={styles.container}>
-        <Display value={this.state.displayValue}/>
+        <Display value={this.state.display}/>
         <View style={styles.btnWrapper}>
           <View style={styles.row}>
-            <Button value="AC" background="#bdbdbd" press={this.clearDisplay.bind(this)}/>
-            <Button value="+/-" background="#bdbdbd" press={this.changeSign.bind(this)}/>
+            <Button value="AC" background="#bdbdbd" press={this.handleTouch.bind(this)}/>
+            <Button value="+/-" background="#bdbdbd" press={this.handleTouch.bind(this)}/>
             <Button value="%" background="#bdbdbd" press={this.handleTouch.bind(this)}/>
             <Button value="/" background="#FB8C00" press={this.handleTouch.bind(this)}/>
           </View>
           <View style={styles.row}>
-            <Button value="mc" background="#616161" line="31" press={this.clearMemory.bind(this)}/>
-            <Button value="mr" background="#616161" line="31" press={this.readMemory.bind(this)}/>
-            <Button value="m-" background="#616161" line="31" press={this.decrementMemory.bind(this)}/>
-            <Button value="m+" background="#FB8C00" line="31" press={this.incrementMemory.bind(this)}/>
+            <Button value="mc" background="#616161" line="31" press={this.handleTouch.bind(this)}/>
+            <Button value="mr" background="#616161" line="31" press={this.handleTouch.bind(this)}/>
+            <Button value="m-" background="#616161" line="31" press={this.handleTouch.bind(this)}/>
+            <Button value="m+" background="#FB8C00" line="31" press={this.handleTouch.bind(this)}/>
           </View>
           <View style={styles.row}>
             <Button value="7" background="#616161" press={this.handleTouch.bind(this)}/>
@@ -136,9 +204,9 @@ export class Calculator extends React.Component {
             <Button value="+" background="#FB8C00" press={this.handleTouch.bind(this)}/>
           </View>
           <View style={styles.row}>
-            <Button value="0" background="#616161" style={{flex: 1}} press={this.handleZeroButton.bind(this)}/>
-            <Button value="." background="#616161" press={this.handleDecimal.bind(this)}/>
-            <Button value="=" background="#FB8C00" press={this.calculate.bind(this)}/>
+            <Button value="0" background="#616161" style={{flex: 1}} press={this.handleTouch.bind(this)}/>
+            <Button value="." background="#616161" press={this.handleTouch.bind(this)}/>
+            <Button value="=" background="#FB8C00" press={this.handleTouch.bind(this)}/>
           </View>
         </View>
       </View>

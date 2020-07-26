@@ -12,6 +12,7 @@ export class Display extends React.Component {
           editable={false}
           placeholder="0"
           placeholderTextColor="#fff"
+          maxLength={11}
         />
       </View>
     );
