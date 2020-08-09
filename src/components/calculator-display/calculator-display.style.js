@@ -9,6 +9,5 @@ export const styles = StyleSheet.create({
   text: {
     textAlign: 'right',
     color: '#fff',
-    fontSize: 60,
   },
 });
