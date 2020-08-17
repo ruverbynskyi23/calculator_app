@@ -21,7 +21,8 @@ export class Calculator extends React.Component {
   }
 
   groupParentheses(arr) {
-    arr[2] = arr.splice(2, 3, 0).join('');
+    const index = arr.indexOf('(');
+    arr[index] = arr.splice(index, 3, 0).join('');
     return arr;
   }
 
@@ -235,7 +236,6 @@ export class Calculator extends React.Component {
       this.setState({memory: this.getLastNum(chunks)});
       return;
     }
-
     if(operators.includes(display.substr(-1)) && display.substr(-1) !== '%') {
       this.setState({display: display + memory});
       return;
@@ -253,7 +253,7 @@ export class Calculator extends React.Component {
       return;
     }
 
-    this.setState({display: memory});
+    this.setState({display: memory.toString()});
   }
   
   async decrementMemory() {
